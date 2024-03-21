@@ -1,59 +1,41 @@
-(defclass tsetlin-machine ()
-  ((num-clauses :initarg :num-clauses :accessor num-clauses)
-   (num-features :initarg :num-features :accessor num-features)
-   (threshold :initarg :threshold :accessor threshold)
-   (weights :initarg :weights :accessor weights)
-   (biases :initarg :biases :accessor biases)))
+(defstruct fsm
+  (states '(0 1))
+  (alphabet '(0 1))
+  (transition-function '((0 (0 1) (1 0))
+			(1 (0 0) (1 1))))
+  (start-state 0)
+  (current-state 0))
 
-(defun tsetlin-machine-eval (machine input)
-  (let ((sum 0))
-    (dotimes (clause (num-clauses machine))
-      (let ((clause-sum 0))
-        (dotimes (feature (num-features machine))
-          (when (and (aref input feature)
-                     (aref (weights machine) clause feature))
-            (incf clause-sum)))
-        (when (>= clause-sum (threshold machine))
-          (incf sum (aref (biases machine) clause)))))
-    sum))
+(defun tsetlin-transition-function (tm)
+  "each of 2n states of the given Tsetlin Finite State Automaton can take either a penalty transition 1, or reward transition 0"
+  (let ((num-states (length (fsm-states tm))))
+    (cons
+     '(0 (0 0) (1 1))
+     (append
+      (loop for n from 1 to (/ (1- num-states) 2)
+	    collect
+	    `(,n (0 ,(1- n))
+		 (1 ,(1+ n))))
+      (append
+       (loop for n from (/ num-states 2) to (- num-states 2)
+	     collect
+	     `(,n (1 ,(1- n))
+		  (0 ,(1+ n))))
+       `((,(1- num-states)
+	  (0 ,(1- num-states))
+	  (1 ,(- num-states 2))))
+       )))))
 
-(defun tsetlin-machine-train (machine input target)
-  (let ((output (tsetlin-machine-eval machine input))
-        (error (- target (tsetlin-machine-eval machine input))))
-    (when (/= output target)
-      (dotimes (clause (num-clauses machine))
-        (dotimes (feature (num-features machine))
-          (when (and (aref input feature)
-                     (aref (weights machine) clause feature))
-            (setf (aref (weights machine) clause feature)
-                  (if (> target output)
-                      (min 1 (+ (aref (weights machine) clause feature) 1))
-                      (max 0 (- (aref (weights machine) clause feature) 1)))))))
-      (dotimes (clause (num-clauses machine))
-        (setf (aref (biases machine) clause)
-              (if (> target output)
-                  (min 100 (+ (aref (biases machine) clause) 1))
-                  (max -100 (- (aref (biases machine) clause) 1))))))
-    error))
-
-(defun make-tsetlin-machine (num-clauses num-features threshold)
-  (let* ((weights (make-array `(,num-clauses ,num-features)
-                               :initial-element 1))
-         (biases (make-array num-clauses
-                              :initial-element 0)))
-    (make-instance 'tsetlin-machine
-                   :num-clauses num-clauses
-                   :num-features num-features
-                   :threshold threshold
-                   :weights weights
-                   :biases biases)))
-
-(defun tests ()
-  (let ((machine (make-tsetlin-machine 3 4     
-    (print (tsetlin-machine-eval machine #(1 0 1 0)))
+(defun tsetlin-action (tm)
+  (let ((num-states (length (fsm-states tm))))
+    (if (<= (fsm-current-state tm) (1- (/ num-states 2)))
+	0 1)))
     
-    (print (tsetlin-machine-train machine #(1 0 1 0) 1))
-    (print (tsetlin-machine-eval machine #(1 0 1 0)))
-
-    (print (tsetlin-machine-train machine #(0 1 0 1) 0))
-    (print (tsetlin-machine-eval machine #(0 1 0 1)))))
+	 
+(defun create-tsetlin-machine (n)
+  (setq tm (make-fsm
+	    :states (loop for x from 0 to (- (* 2 n) 1) collect x)
+	    :start-state (random (* 2 n))))
+  (setf (fsm-current-state tm) (fsm-start-state tm))
+  (setf (fsm-transition-function tm) (tsetlin-transition-function tm))
+  tm)
