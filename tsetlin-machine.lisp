@@ -132,10 +132,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun positive-clauses (i)
-  ()
+  ())
 
 (defun negative-clauses (i)
-  ()
+  ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
