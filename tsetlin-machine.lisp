@@ -62,6 +62,7 @@
        )))))
 
 (defun tsetlin-action (tm)
+  ;; only works for 2n 2 action transition-function  
   (let ((num-states (length (fsm-states tm))))
     (if (<= (fsm-current-state tm) (1- (/ num-states 2)))
 	0 1)))
@@ -74,6 +75,69 @@
   (setf (fsm-current-state tm) (fsm-start-state tm))
   (setf (fsm-transition-function tm) (tsetlin-transition-function tm))
   tm)
+
+;; with input
+;; inputs to tesla automata
+;; calculate clause value
+;; with action
+
+;; the formula that determines clause computing
+;; example 4, literal system and a single clause
+;; clause is conjunctive of literals and their negations
+
+(defun conjunction (clauses)
+  (if (null clauses)
+      t
+      (every #'identity clauses)))
+
+(defun negated-literals (literals)
+  (mapcar #'not literals))
+
+(defun negated-input (input)
+  (mapcar (lambda (x)
+	    (case x
+	      (0 1)
+	      (1 0)))
+	  input))
+
+(defun cij (literals)
+  (conjunction
+ (append (conjunction (positive-clauses))
+	 (conjunction (negative-clauses))))
+)
+
+(defun input-to-boolean (input)
+  (mapcar (lambda (x)
+	    (case x
+	      (1 t)
+	      (0 nil)))))
+
+;; the input 'votes for inclusion of literals in a clause
+;; each literal can output 1 or 0 after it is included
+;; 
+
+(setq sample-input-I
+      '(1 0 1 1)
+      negated-input-Ibar
+      (negated-input sample-input-I)
+      resulting-clij-calculated-positive
+      "/\ x0 x2 x3" ;; include/exclude literals?
+      resulting-clij-calculated-negative
+      "/\ x1"
+      resulting-c
+      "1 & 1 & 1 & 1....&1 = 1"
+      )
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun positive-clauses (i)
+  ()
+
+(defun negative-clauses (i)
+  ()
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	
 
